@@ -1,0 +1,29 @@
+name: Vérification
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows-powershell-51:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests sous Windows PowerShell 5.1
+        shell: powershell
+        run: .\tests\Test-Depot.ps1
+      - name: Analyse statique (PSScriptAnalyzer)
+        shell: powershell
+        run: |
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+          $r = @('.\src', '.\scripts') | ForEach-Object { Invoke-ScriptAnalyzer -Path $_ -Recurse -Severity Error }
+          $r | Format-Table -AutoSize
+          if ($r) { exit 1 }
+
+  linux-pwsh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests sous PowerShell 7
+        shell: pwsh
+        run: ./tests/Test-Depot.ps1
