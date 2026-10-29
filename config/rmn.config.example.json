@@ -1,0 +1,21 @@
+{
+  "PrefixeEchantillon": "EB1212",
+  "Groupe": "Voyer",
+  "RacineReseau": "\\\\ul.ca\\fsg\\CHM\\RMN-LCMS-GCMS",
+  "Appareils": [
+    { "Dossier": "RMN300DATA", "Frequence": "300MHz" },
+    { "Dossier": "RMN400DATA", "Frequence": "400MHz" },
+    { "Dossier": "RMN500DATA", "Frequence": "500MHz" }
+  ],
+  "Destination": "%USERPROFILE%\\OneDrive\\RMN",
+
+  "ModeleNomExperience": "^(?<Parent>{Prefixe}-[^-]+)-(?<Experience>\\d+)$",
+  "FormatDossierLocal": "{Nom}_{Frequence}",
+  "DelaiApresDetectionSecondes": 3,
+  "StabiliteSecondes": 60,
+  "FichiersRequis": [],
+  "IntervalleVerificationReseauSecondes": 30,
+  "BalayagePeriodiqueMinutes": 10,
+  "DossierJournaux": "%LOCALAPPDATA%\\RMN\\Logs",
+  "JoursConservationJournaux": 30
+}
