@@ -1,0 +1,15 @@
+# Configuration propre à chaque poste
+config/rmn.config.json
+
+# Journaux et données RMN (ne jamais versionner les spectres)
+*.log
+Logs/
+EB*-*/
+**/fid
+**/ser
+**/pdata/
+
+# Divers
+.vscode/
+Thumbs.db
+desktop.ini
