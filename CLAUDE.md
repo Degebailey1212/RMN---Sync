@@ -1,24 +1,16 @@
-# Instructions pour Claude Code
+# Instructions pour Claude Code (branche version-onedrive)
 
 Réponds et commente en français.
 
-## Projet
+Cette branche est la **référence fonctionnelle** : `Master_code_RMN_watcher+Sync.ps1` est en
+production sur le poste de l'utilisateur via la tâche planifiée « Master_code_RMN_watcher+Sync ».
 
-Synchronisation des données RMN de partages réseau vers un dossier local, pour n'importe quel membre d'un laboratoire. Tout réglage propre à un utilisateur vit dans `config/rmn.config.json` (modèle : `config/rmn.config.example.json`) ; aucune valeur personnelle dans le code.
-
-- `src/RMNSync.psm1` : fonctions (`Read-RmnConfig`, `Get-RmnExperience`, `Get-RmnDestination`, `Test-RmnExperiencePrete`, `Copy-RmnExperience`, `Sync-RmnExperience`, `Invoke-RmnBalayage`, `Start-RmnSurveillance`).
-- `src/RMN-Sync.ps1` : point d'entrée, verrou d'instance unique (mutex), journal.
-- `scripts/Installer-Tache.ps1` : tâche planifiée (ouverture + déverrouillage de session) pour l'utilisateur courant.
-- `legacy/` : ancien script, référence de comportement ; ne pas le modifier.
-
-## Contraintes impératives
-
-- **Windows PowerShell 5.1** obligatoire : pas de `??`, `?.`, `&&`, `||`, ternaire, `ForEach-Object -Parallel`, ni `Join-Path` à plus de deux arguments.
-- `.ps1`/`.psm1` en **UTF-8 avec BOM**, fins de ligne CRLF.
-- Ne jamais écraser, supprimer ni recopier une expérience locale existante ; ne jamais écrire sur les partages réseau.
-- Copie via un dossier `.partiel` puis renommage (pas de dossier final incomplet).
-- Toute nouvelle option : valeur par défaut dans `Read-RmnConfig`, entrée dans l'exemple JSON, ligne dans le tableau du README.
-
-## Tests
-
-`pwsh ./tests/Test-Depot.ps1` doit réussir avant toute fin de tâche. Ajouter un cas dans `tests/Test-Logique.ps1` pour chaque comportement modifié. La VM cloud n'a pas accès à `\\ul.ca`, au Planificateur ni à OneDrive : indiquer dans le PR ce qui doit être vérifié sur un poste Windows.
+Règles :
+- Ne pas changer le comportement du script principal sans que l'utilisateur l'ait demandé.
+- Conserver exactement la reconnaissance des noms : correspondance sur le **début** du nom
+  (`^EB1212-\d{2,3}-\d{2}`, sans ancre de fin), nom local = `$matches[0]` + `_<freq>MHz`,
+  dossier parent = nom jusqu'au dernier tiret.
+- Compatibilité Windows PowerShell 5.1 obligatoire.
+- Ne jamais écraser ni supprimer de données ; ne jamais écrire sur les partages réseau.
+- Toute évolution (configuration par utilisateur, mise à jour ponctuelle…) se fait par petites
+  étapes, chacune vérifiable par l'utilisateur sur son poste Windows.

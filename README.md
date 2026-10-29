@@ -1,56 +1,22 @@
-# RMN Sync
+# RMN Sync — version OneDrive (fonctionnelle)
 
-Copie automatiquement les expériences RMN depuis les partages réseau des appareils vers un dossier local, puis surveille l'arrivée de nouvelles expériences. Tout ce qui est propre à un utilisateur (préfixe d'échantillon, groupe, appareils, destination) se règle dans un fichier de configuration, sans toucher au code.
+Cette branche contient **le code qui fonctionne**, copié tel quel depuis
+`OneDrive\RMN\RMN code` le 29 octobre 2026. Aucune ligne n'a été modifiée.
 
-## Installation pour un nouvel utilisateur (Windows)
+| Fichier | Rôle |
+|---|---|
+| `Master_code_RMN_watcher+Sync.ps1` | Script principal : balayage complet au démarrage et au retour du réseau, puis surveillance en temps réel (FileSystemWatcher) des dossiers RMN 300, 400 et 500 MHz. |
+| `Sync_RMN.ps1` | Ancien script de synchronisation **ponctuelle** (un seul balayage, puis s'arrête). ⚠️ Son chemin de destination pointe encore vers `C:\Users\emili\OneDrive\RMN` et il recopie toutes les expériences à chaque passage. |
+| `Automatisation_RMN/Demarrer_RMN.ps1` | Lanceur utilisé par la tâche planifiée ; journal dans `%LOCALAPPDATA%\RMN\Logs`. |
+| `Automatisation_RMN/Lancer_RMN.cmd` | Démarre la tâche planifiée par double-clic. |
+| `Automatisation_RMN/Tache_RMN_corrigee.xml` | Définition de la tâche planifiée (à importer dans le Planificateur). |
+| `Automatisation_RMN/Mode_emploi.md` | Mode d'emploi. |
 
-1. Cloner ou télécharger le dépôt.
-2. Copier `config\rmn.config.example.json` en `config\rmn.config.json` et l'adapter (au minimum `PrefixeEchantillon` et `Groupe`).
-3. Tester un balayage unique :
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\src\RMN-Sync.ps1 -UneFois
-   ```
-4. Installer le démarrage automatique (ouverture et déverrouillage de session) :
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\scripts\Installer-Tache.ps1
-   ```
-   Ajouter `-DesactiverAncienneTache` si l'ancienne tâche `Master_code_RMN_watcher+Sync` existe.
+## Règle de nommage (à conserver)
 
-Voir `docs/Mode_emploi.md` pour l'utilisation quotidienne.
+Les dossiers sont reconnus par leur **début** de nom : `^EB1212-\d{2,3}-\d{2}`.
+Tout ce qui suit est ignoré pour le nom local. Exemple :
+`EB1212-071-36…` sur le 400 MHz → `RMN\EB1212-071\EB1212-071-36_400MHz`.
 
-## Configuration
-
-| Clé | Rôle | Défaut |
-|---|---|---|
-| `PrefixeEchantillon` | Préfixe des dossiers à copier (ex. `EB1212`) | obligatoire |
-| `Groupe` | Sous-dossier du groupe sur chaque appareil (ex. `Voyer`) | vide |
-| `RacineReseau` | Racine commune des partages | — |
-| `Appareils` | Liste `{ "Dossier", "Frequence" }`, ou `{ "Chemin", "Frequence" }` pour un chemin complet | obligatoire |
-| `Destination` | Dossier local (variables `%USERPROFILE%` etc. acceptées) | obligatoire |
-| `ModeleNomExperience` | Expression régulière ; `{Prefixe}` est remplacé, groupe `Parent` = dossier parent | `^(?<Parent>{Prefixe}-[^-]+)-(?<Experience>\d+)$` |
-| `FormatDossierLocal` | Nom du dossier copié : `{Nom}`, `{Parent}`, `{Experience}`, `{Frequence}` | `{Nom}_{Frequence}` |
-| `StabiliteSecondes` | Copie seulement quand aucun fichier n'a changé depuis ce délai (acquisition terminée) | 60 |
-| `FichiersRequis` | Fichiers devant exister avant copie ; `"fid\|ser"` = l'un ou l'autre | aucun |
-| `DelaiApresDetectionSecondes` | Attente après détection d'un nouveau dossier | 3 |
-| `IntervalleVerificationReseauSecondes` | Fréquence de vérification du réseau | 30 |
-| `BalayagePeriodiqueMinutes` | Balayage de rattrapage (événements manqués) | 10 |
-| `DossierJournaux` / `JoursConservationJournaux` | Emplacement et durée de conservation des journaux | `%LOCALAPPDATA%\RMN\Logs` / 30 |
-
-## Structure
-
-```
-src/RMN-Sync.ps1        point d'entrée (instance unique, journal, boucle)
-src/RMNSync.psm1        fonctions (configuration, analyse des noms, copie, surveillance)
-config/                 modèle de configuration
-scripts/                installation / désinstallation de la tâche, import de l'ancien code
-tests/                  Test-Depot.ps1 (tout), Test-Logique.ps1 (dossiers simulés)
-legacy/                 ancien script, pour comparaison seulement
-```
-
-## Tests
-
-```powershell
-powershell -File .\tests\Test-Depot.ps1     # Windows PowerShell 5.1
-pwsh ./tests/Test-Depot.ps1                 # PowerShell 7, y compris Linux
-```
-Les tests simulent les partages réseau avec des dossiers temporaires : détection, copie, non-écrasement, attente de stabilité, coupure et retour du réseau, instance unique.
+La version de la branche `main` exigeait que le nom s'arrête exactement après le numéro,
+ce qui excluait les dossiers avec un suffixe : c'est la cause probable de son échec.
