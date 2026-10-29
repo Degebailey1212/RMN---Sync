@@ -34,9 +34,11 @@ if (-not $Config) {
 $cfg = Read-RmnConfig -Chemin $Config
 Initialize-RmnJournal -Config $cfg
 
-# Une seule instance par utilisateur, quel que soit le mode de lancement
-# (tâche planifiée, double-clic, VS Code).
+# Une seule surveillance par utilisateur, quel que soit le mode de lancement
+# (tâche planifiée, double-clic, VS Code). La mise à jour ponctuelle (-UneFois)
+# a son propre verrou : elle fonctionne même si la surveillance tourne déjà.
 $nomVerrou = 'RMN-Sync-' + ($env:USERNAME -replace '[^\w-]', '_')
+if ($UneFois) { $nomVerrou += '-Ponctuel' }
 $verrou = New-Object System.Threading.Mutex($false, $nomVerrou)
 $acquis = $false
 try { $acquis = $verrou.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $acquis = $true }
