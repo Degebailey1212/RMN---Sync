@@ -2,6 +2,8 @@
 
 **Démarrer manuellement :** double-cliquer sur `scripts\Lancer.cmd` (démarre la tâche planifiée ; aucun doublon possible).
 
+**Mise à jour ponctuelle :** double-cliquer sur `scripts\Mise-a-jour.cmd`. Copie tout de suite les nouvelles expériences puis s'arrête ; fonctionne même si la synchronisation automatique tourne déjà.
+
 **Journaux :** `%LOCALAPPDATA%\RMN\Logs`, un fichier `RMN_AAAA-MM-JJ.log` par jour, conservés 30 jours.
 
 **Arrêter :** Planificateur de tâches → `RMN-Sync` → « Fin ».
