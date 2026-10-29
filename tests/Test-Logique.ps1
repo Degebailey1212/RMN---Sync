@@ -106,6 +106,11 @@ try {
         $p2.WaitForExit(15000) | Out-Null
         Verifier 'deuxième instance refusée' ($p2.HasExited -and $p2.ExitCode -eq 0)
 
+        $sortie = Join-Path $tmp 'ponctuel.txt'
+        $p3 = Start-Process -FilePath $exe -ArgumentList @('-NoProfile', '-File', "`"$entree`"", '-Config', "`"$cfgFichier`"", '-UneFois') -PassThru -RedirectStandardOutput $sortie @style
+        $p3.WaitForExit(30000) | Out-Null
+        Verifier 'mise à jour ponctuelle pendant la surveillance' ($p3.HasExited -and $p3.ExitCode -eq 0 -and (Get-Content -LiteralPath $sortie -Raw) -match 'Balayage :')
+
         $exp3 = Join-Path $src500 'EB1212-080-5'
         New-Item -ItemType Directory -Path $exp3 -Force | Out-Null
         Set-Content -LiteralPath (Join-Path $exp3 'fid') -Value 'data'
