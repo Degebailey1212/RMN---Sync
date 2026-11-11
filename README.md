@@ -1,22 +1,60 @@
-# RMN Sync — version OneDrive (fonctionnelle)
+# RMN Sync
 
-Cette branche contient **le code qui fonctionne**, copié tel quel depuis
-`OneDrive\RMN\RMN code` le 29 octobre 2026. Aucune ligne n'a été modifiée.
+Copie automatiquement les données RMN (300, 400 et 500 MHz) du réseau de l'Université Laval
+vers `OneDrive\RMN`, et garde la copie à jour pendant et après les acquisitions.
+
+Cette branche reflète exactement le dossier `OneDrive\RMN\RMN code` (état du 11 novembre 2026).
+
+## Code MAJ — la version à utiliser
 
 | Fichier | Rôle |
 |---|---|
-| `Master_code_RMN_watcher+Sync.ps1` | Script principal : balayage complet au démarrage et au retour du réseau, puis surveillance en temps réel (FileSystemWatcher) des dossiers RMN 300, 400 et 500 MHz. |
-| `Sync_RMN.ps1` | Ancien script de synchronisation **ponctuelle** (un seul balayage, puis s'arrête). ⚠️ Son chemin de destination pointe encore vers `C:\Users\emili\OneDrive\RMN` et il recopie toutes les expériences à chaque passage. |
-| `Automatisation_RMN/Demarrer_RMN.ps1` | Lanceur utilisé par la tâche planifiée ; journal dans `%LOCALAPPDATA%\RMN\Logs`. |
-| `Automatisation_RMN/Lancer_RMN.cmd` | Démarre la tâche planifiée par double-clic. |
-| `Automatisation_RMN/Tache_RMN_corrigee.xml` | Définition de la tâche planifiée (à importer dans le Planificateur). |
-| `Automatisation_RMN/Mode_emploi.md` | Mode d'emploi. |
+| `Code MAJ/Demarrer ecoute RMN.cmd` | Double-clic : affiche l'état (écoute en marche ? démarrage automatique installé ?), propose d'installer le démarrage automatique et lance l'écoute en arrière-plan. |
+| `Code MAJ/Mise a jour RMN.cmd` | Double-clic : mise à jour complète immédiate, puis s'arrête. Fonctionne même si l'écoute tourne. |
+| `Code MAJ/moteur/Demarrer_ecoute_RMN.ps1` | Le code. Les réglages (préfixe, groupe, appareils, destination, délais) sont regroupés au début, dans `$Config`. |
 
-## Règle de nommage (à conserver)
+Les `.cmd` lancent PowerShell avec `-ExecutionPolicy Bypass` : un double-clic sur un `.ps1`
+est bloqué par Windows, et la fenêtre se fermait avant qu'on puisse lire l'erreur.
 
-Les dossiers sont reconnus par leur **début** de nom : `^EB1212-\d{2,3}-\d{2}`.
-Tout ce qui suit est ignoré pour le nom local. Exemple :
-`EB1212-071-36…` sur le 400 MHz → `RMN\EB1212-071\EB1212-071-36_400MHz`.
+### Ce que fait l'écoute
 
-La version de la branche `main` exigeait que le nom s'arrête exactement après le numéro,
-ce qui excluait les dossiers avec un suffixe : c'est la cause probable de son échec.
+- **Même classement que l'ancien script** : le nom est reconnu par son *début*
+  (`^EB1212-\d{2,3}-\d{2}`) ; `EB1212-071-36_1H` sur le 400 MHz devient
+  `RMN\EB1212-071\EB1212-071-36_400MHz`.
+- **Copie incrémentale** (robocopy `/E /XO /XX`) : seuls les fichiers nouveaux ou plus récents
+  sont copiés. Une expérience ajoutée 8 h plus tard dans un dossier déjà copié est récupérée.
+- **Surveillance de l'intérieur des dossiers** (`IncludeSubdirectories`) : un dossier actif est
+  recopié au moins toutes les 10 minutes, puis une dernière fois après 60 s de calme.
+- **Rattrapage** toutes les 10 minutes des dossiers modifiés depuis moins de 48 h, et balayage
+  à chaque retour du réseau (appareil par appareil).
+- **Aucune suppression**, ni sur le réseau ni en local ; un fichier local plus récent
+  (retraité dans TopSpin) n'est jamais écrasé.
+- Une seule écoute à la fois (mutex). Journaux : `%LOCALAPPDATA%\RMN\Logs`.
+
+### Démarrage automatique
+
+`Demarrer ecoute RMN.cmd` crée la tâche planifiée **« RMN - Ecoute et mise a jour »**
+(ouverture et déverrouillage de session) et désactive, sans la supprimer, l'ancienne tâche
+`Master_code_RMN_watcher+Sync`.
+
+Vérification :
+
+```powershell
+foreach ($n in 'RMN - Ecoute et mise a jour','Master_code_RMN_watcher+Sync') { $t = Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue; if ($t) { "$n  ->  $($t.State)" } else { "$n  ->  n'existe pas" } }
+```
+
+Attendu : la nouvelle tâche en `Ready` ou `Running`, l'ancienne en `Disabled`.
+
+## Anciens codes
+
+`Anciens codes/` contient les scripts d'origine, inchangés, pour référence
+(`Master_code_RMN_watcher+Sync.ps1`, `Sync_RMN.ps1`, `Automatisation_RMN/`).
+Limite connue de l'ancien script : un dossier déjà copié était ignoré pour toujours, donc les
+expériences ajoutées plus tard dans le même dossier n'étaient jamais récupérées.
+
+## État des tests
+
+Testé sur dossiers simulés sous PowerShell 7 (Linux, sans robocopy) : nom avec suffixe,
+nouvelle expérience dans un dossier existant, fichier qui grossit, nouveau dossier, fichier
+local plus récent conservé, deux lancements simultanés, mise à jour pendant l'écoute.
+Sur le poste Windows : mise à jour ponctuelle et lancement de l'écoute confirmés par l'utilisateur.
